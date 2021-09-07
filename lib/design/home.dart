@@ -11,7 +11,7 @@ class home extends StatelessWidget {
           title: Text('메인페이지(구글지도)'),
           actions: <Widget>[
             IconButton(
-              onPressed: () {},//검색버튼(임시)
+              onPressed: () {},//검색버튼(임시) 새로고침?
               icon: Icon(Icons.search),
             ),
             IconButton(
@@ -55,8 +55,8 @@ class home extends StatelessWidget {
                 ),
                 title: Text('메뉴2'),//메뉴2 텍스트
                 onTap: (){},//메뉴2 동작
+                trailing: Icon(Icons.arrow_forward_ios),//메뉴2 화살표
               )
-
             ],
           ),
         ),

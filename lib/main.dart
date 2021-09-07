@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: home(),
+      home: home(),//시작화면 불러옴 -> 구글맵 home.dart
     );
   }
 }
