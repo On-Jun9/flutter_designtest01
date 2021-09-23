@@ -1,5 +1,6 @@
 import 'dart:async';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_designtest01/design/testpage1.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -11,10 +12,12 @@ class home extends StatefulWidget {
 }
 class homeState extends State<home>{
 
+
   Completer<GoogleMapController> _controller = Completer();
+  final Future<FirebaseApp> _initialization = Firebase.initializeApp();
 
   static final CameraPosition _kGooglePlex = CameraPosition(
-    target: LatLng(37.42796133580664, -122.085749655962),
+    target: LatLng(37.56421135, 127.0016985),
     zoom: 14.4746,
   );
 
@@ -23,6 +26,19 @@ class homeState extends State<home>{
       target: LatLng(37.43296265331129, -122.08832357078792),
       //tilt: 59.440717697143555,
       zoom: 19.151926040649414);
+
+  List<Marker> _markers = [];
+  @override
+  void initState() {
+    super.initState();
+    _markers.add(Marker(
+        markerId: MarkerId("1"),
+        draggable: true,
+        onTap: () => print("Marker!"),
+        infoWindow: InfoWindow(title: 'SEOUL', snippet: 'welcome'),
+        position: LatLng(37.56421135, 127.0016985)));
+
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,18 +101,62 @@ class homeState extends State<home>{
         body: GoogleMap(
           mapType: MapType.normal,
           initialCameraPosition: _kGooglePlex,
+          myLocationButtonEnabled: true,
+          markers: Set<Marker>.of(_markers),//마커
           onMapCreated: (GoogleMapController controller){
            _controller.complete(controller);
           },
         ),
       floatingActionButton: FloatingActionButton.extended(
-          onPressed: _goToMap,
+          onPressed: getMarkerData,//변경
           label: Text('이동')
       ),
       );
   }
-  
-  Future<void> _goToMap() async{
+
+  Future<void> _testadd() async{//데이터 삽입 테스트
+    FirebaseFirestore.instance.collection('제보').add({'1': '123.124142','2' : '213.1242141'});
+  }
+
+  Map<MarkerId , Marker> markers = <MarkerId , Marker>{};//마커 테스트
+
+  Future<void> getMarkerData() async{//데이터 읽어오기 테스트
+    FirebaseFirestore.instance.collection('제보').get().then((myMarkers){
+
+      for(int i = 0; i < myMarkers.docs.length; i++) {
+        print(myMarkers.docs[i].get('좌표'));
+        var asb = myMarkers.docs[i].get('좌표');
+        print(asb['1']);
+      }
+
+      // if(true){
+      //   for(int i = 0; i < myMarkers.docs.length; i++){
+      //     initMarker(myMarkers.docs[i].data, myMarkers.docs[i].id);
+      //     print(myMarkers.docs[i].data);
+      //     print('sdadasdsdasdasd' + myMarkers.docs[i].id);
+      //
+      //   }
+      // }else{
+      //   print('없다');
+      // }
+    });
+  }
+
+  void initMarker(specify , specifyId) async {//마커 만들기 테스트
+    var markerIdVal = specifyId;
+    final MarkerId markerId = MarkerId(markerIdVal);
+    final Marker marker = Marker(
+      markerId: markerId,
+      position: LatLng(specify['stationLocation'].latitude , specify['stationLocation'].longitude),
+      // infoWindow: InfoWindow(title: 'HvD Stations' , snippet: specify['stationAddress']),
+    );
+    setState(() {
+      markers[markerId] = marker;
+    });
+  }
+
+  Future<void> _goToMap() async{//지도 이동
+
     final GoogleMapController controller = await _controller.future;
     controller.animateCamera(CameraUpdate.newCameraPosition(_kLake));
   }
