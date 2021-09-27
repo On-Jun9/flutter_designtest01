@@ -77,7 +77,14 @@ class homeState extends State<home> {
             //메뉴 로그인
             UserAccountsDrawerHeader(
                 accountName: Text('구글 이름 구현'),
-                accountEmail: Text('구글 이메일 구현')
+                accountEmail: Text('구글 이메일 구현'),
+              decoration: BoxDecoration(
+                color: Colors.blueGrey,
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(10),
+                    bottomRight: Radius.circular(10)
+                )
+              ),
             ),
             //메뉴 리스트
             ListTile(
@@ -114,7 +121,7 @@ class homeState extends State<home> {
           stream: FirebaseFirestore.instance.collection('좌표').snapshots(),
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
-              return Text('no data');
+              return CircularProgressIndicator();
             } else {
               print("스트림빌더 작동");
               markers = {};
@@ -146,10 +153,10 @@ class homeState extends State<home> {
 
           }
       ),
-      floatingActionButton: FloatingActionButton.extended(
-          onPressed: getMarkerData, //변경
-          label: Text('이동')
-      ),
+      // floatingActionButton: FloatingActionButton.extended(
+      //     onPressed: getMarkerData, //변경
+      //     label: Text('이동')
+      // ),
     );
   }
 
