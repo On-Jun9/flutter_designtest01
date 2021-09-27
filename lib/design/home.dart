@@ -15,6 +15,7 @@ class homeState extends State<home> {
 
 
   Completer<GoogleMapController> _controller = Completer();
+
   // final Future<FirebaseApp> _initialization = Firebase.initializeApp();
 
   Map<MarkerId, Marker> markers = <MarkerId, Marker>{}; //마커 테스트
@@ -32,11 +33,12 @@ class homeState extends State<home> {
 
   // Map<MarkerId,Marker> markers = <MarkerId,Marker>{};
 
+  // Stream<QuerySnapshot> collectionStraem = FirebaseFirestore.instance.collection('제보').snapshots();
+
   @override
   void initState() {
 
     super.initState();
-    getMarkerData();
     // _markers.add(Marker(
     //     markerId: MarkerId("1"),
     //     draggable: true,
@@ -108,15 +110,41 @@ class homeState extends State<home> {
       ),
 
       //홈 구글맵 구현
-      body: GoogleMap(
-        mapType: MapType.normal,
-        initialCameraPosition: _kGooglePlex,
-        myLocationButtonEnabled: true,
-        markers: Set<Marker>.of(markers.values),
-        //마커
-        onMapCreated: (GoogleMapController controller) {
-          _controller.complete(controller);
-        },
+      body: StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance.collection('좌표').snapshots(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return Text('no data');
+            } else {
+              print("스트림빌더 작동");
+              markers = {};
+              snapshot.data!.docs.forEach((change) {
+                var markerIdVal = change.id;
+                final MarkerId markerId = MarkerId(markerIdVal);
+                markers[markerId] = Marker(
+                  markerId:  markerId,
+                  position: LatLng(
+                    change['stationLocation'].latitude,
+                    change['stationLocation'].longitude),
+                  infoWindow: InfoWindow(
+                      title: change['name']
+                  ),
+                  );
+              });
+              return GoogleMap(
+                mapType: MapType.normal,
+                initialCameraPosition: _kGooglePlex,
+                myLocationButtonEnabled: true,
+                markers: Set<Marker>.of(markers.values),
+                //마커
+                onMapCreated: (GoogleMapController controller) {
+                  _controller.complete(controller);
+                  print("구글맵 로딩");
+                },
+              );
+            }
+
+          }
       ),
       floatingActionButton: FloatingActionButton.extended(
           onPressed: getMarkerData, //변경
@@ -127,8 +155,13 @@ class homeState extends State<home> {
 
   Future<void> _testadd() async {
     //데이터 삽입 테스트
-    FirebaseFirestore.instance.collection('제보').add(
+    FirebaseFirestore.instance.collection('좌표').add(
         {'1': '123.124142', '2': '213.1242141'});
+  }
+
+
+  Stream<QuerySnapshot> loadData2(){
+    return FirebaseFirestore.instance.collection('좌표').snapshots();
   }
 
 
@@ -140,14 +173,13 @@ class homeState extends State<home> {
       //   var asb = myMarkers.docs[i].get('좌표');
       //   print(asb['1']);
       // }
-      if(myMarkers.docs.isNotEmpty){
-        for(int i = 0; i < myMarkers.docs.length; i++){
+      if (myMarkers.docs.isNotEmpty) {
+        for (int i = 0; i < myMarkers.docs.length; i++) {
           initMarker(myMarkers.docs[i].data(), myMarkers.docs[i].id);
           print(myMarkers.docs[i].data);
           print('-----------' + myMarkers.docs[i].id);
-
         }
-      }else{
+      } else {
         print('없다');
       }
     });
@@ -158,10 +190,11 @@ class homeState extends State<home> {
     var markerIdVal = specifyId;
     final MarkerId markerId = MarkerId(markerIdVal);
     final Marker marker = Marker(
-      markerId: markerId,
-      position: LatLng(specify['stationLocation'].latitude,
-          specify['stationLocation'].longitude),
-      infoWindow: InfoWindow(title: specify['name'] , snippet: specify['stationAddress']),
+        markerId: markerId,
+        position: LatLng(specify['stationLocation'].latitude,
+            specify['stationLocation'].longitude),
+        infoWindow: InfoWindow(
+            title: specify['name'], snippet: specify['stationAddress']),
         onTap: () { //마커 동작
           Navigator.push( //네비게이터
               context,
@@ -171,12 +204,12 @@ class homeState extends State<home> {
           );
         }
     );
-    setState(() {
-      markers[markerId] = marker;
-    });
-    print('-----------------------------------');
-    print(specify['stationLocation'].latitude);
-    print(specify['stationLocation'].longitude);
+    // setState(() {
+    //   markers[markerId] = marker; //ui 업데이트
+    // });
+    // print('-----------------------------------');
+    // print(specify['stationLocation'].latitude);
+    // print(specify['stationLocation'].longitude);
   }
 
   Future<void> _goToMap() async {
