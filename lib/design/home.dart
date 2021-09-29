@@ -20,6 +20,11 @@ class homeState extends State<home> {
 
   Map<MarkerId, Marker> markers = <MarkerId, Marker>{}; //마커 테스트
 
+  String markerValue1 ='';
+  String locaname='';
+  String locaLat='';
+  String locationName = '';
+
   static final CameraPosition _kGooglePlex = CameraPosition(
     target: LatLng(37.45662871370885, 126.95005995529378),
     zoom: 14.4746,
@@ -76,6 +81,7 @@ class homeState extends State<home> {
           children: <Widget>[
             //메뉴 로그인
             UserAccountsDrawerHeader(
+              // onDetailsPressed: _showDialog,
                 accountName: Text('구글 이름 구현'),
                 accountEmail: Text('구글 이메일 구현'),
               decoration: BoxDecoration(
@@ -130,11 +136,27 @@ class homeState extends State<home> {
                 final MarkerId markerId = MarkerId(markerIdVal);
                 markers[markerId] = Marker(
                   markerId:  markerId,
+                  onTap: (){
+                    markerValue1 = markerIdVal;
+                    getlocainfo(markerValue1);
+                    print(markerIdVal);
+                    },
                   position: LatLng(
                     change['stationLocation'].latitude,
                     change['stationLocation'].longitude),
                   infoWindow: InfoWindow(
-                      title: change['name']
+                      title: change['name'],
+                      snippet: '정보 추가',
+                      onTap: (){
+                        _showDialog();
+                      },
+
+                    //       (){
+                    //     Navigator.push(context, MaterialPageRoute(
+                    //     builder: (context) => testpage1()
+                    //     )
+                    //   );
+                    // }
                   ),
                   );
               });
@@ -142,6 +164,7 @@ class homeState extends State<home> {
                 mapType: MapType.normal,
                 initialCameraPosition: _kGooglePlex,
                 myLocationButtonEnabled: true,
+                myLocationEnabled: true,
                 markers: Set<Marker>.of(markers.values),
                 //마커
                 onMapCreated: (GoogleMapController controller) {
@@ -224,5 +247,81 @@ class homeState extends State<home> {
 
     final GoogleMapController controller = await _controller.future;
     controller.animateCamera(CameraUpdate.newCameraPosition(_kLake));
+  }
+
+  Future<String> _getAppBarNameWidget() async{
+    await FirebaseFirestore.instance.collection('좌표').get().then((ds) async{
+      var name = ds.docs[1].get('name');
+      print(name);
+      return name;
+    });
+    return '';
+  }
+
+  void getlocainfo(String markerId){
+    FirebaseFirestore.instance.collection('좌표').doc(markerId).get().then((ds) {
+      locaname = ds.get('name').toString();
+      locaLat = ds.get('stationLocation').latitude.toString();
+    });
+  }
+
+  Future<String> asd1234() async{
+    await FirebaseFirestore.instance.collection('좌표').doc(markerValue1).get().then((ds) async{
+      // var name = ds.docs[0].get('name');
+      var name = ds.get('name');
+      print(name);
+      print(markerValue1.toString());
+      return name;
+    });
+    return '';
+  }
+
+  String asd12345() {
+    FirebaseFirestore.instance.collection('좌표').doc(markerValue1).get().then((ds) {
+      // var name = ds.docs[0].get('name');
+      locaname = ds.get('name').toString();
+
+      print('locaname : '+ locaname);
+      print('markerValue1.toString : '+markerValue1.toString());
+      locationName = locaname;
+    });
+    return locationName;
+  }
+
+
+
+  void _showDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context){
+        // FirebaseFirestore.instance.collection('좌표').doc(markerValue1.toString()).get().then((makerInfo) {
+        //   String locationName =  makerInfo['name'].toString();
+        //   print(locationName);
+        // });
+        print('dialog : ' + locaname);
+        return AlertDialog(
+          title: new Text("Alert Dialog title"),
+          content: Container(
+            color: Colors.blue,
+              child: Column(
+
+                children: [
+                  new Text(locaname),
+                  new Text(locaLat),
+                ],
+
+              )
+          ),
+          actions: <Widget>[
+            new FlatButton(
+              child: new Text('확인'),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 }
