@@ -194,10 +194,10 @@ class homeState extends State<home> {
 
           }
       ),
-      floatingActionButton: FloatingActionButton.extended(
-          onPressed: (){}, //변경
-          label: Text('이동')
-      ),
+      // floatingActionButton: FloatingActionButton.extended(
+      //     onPressed: (){}, //변경
+      //     label: Text('이동')
+      // ),
     );
   }
 
