@@ -17,22 +17,7 @@ class home extends StatefulWidget {
 
 class homeState extends State<home> {
 
-  // Future<UserCredential> signInWithGoogle2() async {
-  //   // Trigger the authentication flow
-  //   final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-  //
-  //   // Obtain the auth details from the request
-  //   final GoogleSignInAuthentication googleAuth = await googleUser!.authentication;
-  //
-  //   // Create a new credential
-  //   final credential = GoogleAuthProvider.credential(
-  //     accessToken: googleAuth.accessToken,
-  //     idToken: googleAuth.idToken,
-  //   );
-  //
-  //   // Once signed in, return the UserCredential
-  //   return await FirebaseAuth.instance.signInWithCredential(credential);
-  // }
+  CollectionReference users = FirebaseFirestore.instance.collection('user');
 
   var _login = LoginWidget();
 
@@ -120,7 +105,7 @@ class homeState extends State<home> {
               ),
               title: Text('메뉴1'), //메뉴1 텍스트
               onTap: () async{ //메뉴1 동작
-                _login.signInWithGoogle();
+
               },
               trailing: Icon(Icons.arrow_forward_ios), //메뉴1 화살표
             ),
@@ -131,12 +116,7 @@ class homeState extends State<home> {
               ),
               title: Text('로그인'), //메뉴2 텍스트
               onTap: () { //메뉴1 동작
-                Navigator.push( //네비게이터
-                    context,
-                    MaterialPageRoute( //페이지 이동
-                        builder: (context) => LoginWidget()
-                    )
-                );
+                _login.signInWithGoogle();
               },
               trailing: Icon(Icons.arrow_forward_ios), //메뉴1 화살표
             ),
