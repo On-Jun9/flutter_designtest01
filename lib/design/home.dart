@@ -1,9 +1,13 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_designtest01/design/firstAid.dart';
+import 'package:flutter_designtest01/design/glogin.dart';
 import 'package:flutter_designtest01/design/testpage1.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class home extends StatefulWidget {
   @override
@@ -13,10 +17,26 @@ class home extends StatefulWidget {
 
 class homeState extends State<home> {
 
+  // Future<UserCredential> signInWithGoogle2() async {
+  //   // Trigger the authentication flow
+  //   final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+  //
+  //   // Obtain the auth details from the request
+  //   final GoogleSignInAuthentication googleAuth = await googleUser!.authentication;
+  //
+  //   // Create a new credential
+  //   final credential = GoogleAuthProvider.credential(
+  //     accessToken: googleAuth.accessToken,
+  //     idToken: googleAuth.idToken,
+  //   );
+  //
+  //   // Once signed in, return the UserCredential
+  //   return await FirebaseAuth.instance.signInWithCredential(credential);
+  // }
+
+  var _login = LoginWidget();
 
   Completer<GoogleMapController> _controller = Completer();
-
-  // final Future<FirebaseApp> _initialization = Firebase.initializeApp();
 
   Map<MarkerId, Marker> markers = <MarkerId, Marker>{}; //마커 테스트
 
@@ -99,13 +119,8 @@ class homeState extends State<home> {
                 color: Colors.grey[850],
               ),
               title: Text('메뉴1'), //메뉴1 텍스트
-              onTap: () { //메뉴1 동작
-                Navigator.push( //네비게이터
-                    context,
-                    MaterialPageRoute( //페이지 이동
-                        builder: (context) => testpage1()
-                    )
-                );
+              onTap: () async{ //메뉴1 동작
+                _login.signInWithGoogle();
               },
               trailing: Icon(Icons.arrow_forward_ios), //메뉴1 화살표
             ),
@@ -114,8 +129,31 @@ class homeState extends State<home> {
                 Icons.account_box,
                 color: Colors.grey[850],
               ),
-              title: Text('메뉴2'), //메뉴2 텍스트
-              onTap: () {}, //메뉴2 동작
+              title: Text('로그인'), //메뉴2 텍스트
+              onTap: () { //메뉴1 동작
+                Navigator.push( //네비게이터
+                    context,
+                    MaterialPageRoute( //페이지 이동
+                        builder: (context) => LoginWidget()
+                    )
+                );
+              },
+              trailing: Icon(Icons.arrow_forward_ios), //메뉴1 화살표
+            ),
+            ListTile(
+              leading: Icon( //메뉴3 아이콘
+                Icons.check,
+                color: Colors.grey[850],
+              ),
+              title: Text('응급처치 요령'), //메뉴2 텍스트
+              onTap: () {
+                Navigator.push( //네비게이터
+                    context,
+                    MaterialPageRoute( //페이지 이동
+                        builder: (context) => firstaid()
+                    )
+                );
+              }, //메뉴2 동작
               trailing: Icon(Icons.arrow_forward_ios), //메뉴2 화살표
             )
           ],
@@ -147,7 +185,7 @@ class homeState extends State<home> {
                   infoWindow: InfoWindow(
                       title: change['name'],
                       snippet: '정보 추가',
-                      onTap: (){
+                      onTap: ( ){
                         _showDialog();
                       },
 
@@ -176,10 +214,10 @@ class homeState extends State<home> {
 
           }
       ),
-      // floatingActionButton: FloatingActionButton.extended(
-      //     onPressed: getMarkerData, //변경
-      //     label: Text('이동')
-      // ),
+      floatingActionButton: FloatingActionButton.extended(
+          onPressed: (){}, //변경
+          label: Text('이동')
+      ),
     );
   }
 

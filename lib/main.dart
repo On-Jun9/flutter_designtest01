@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_designtest01/design/home.dart';
+import 'package:flutter_designtest01/app.dart';
 
 
 void main() async{
@@ -17,7 +18,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: home(),//시작화면 불러옴 -> 구글맵 home.dart
+      home: App(),//시작화면 불러옴 -> 구글맵 home.dart
     );
   }
 }
