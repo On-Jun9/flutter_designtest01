@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_designtest01/design/DrawerPage.dart';
+import 'package:flutter_designtest01/design/ReportPage.dart';
 import 'package:flutter_designtest01/design/firstAid.dart';
 import 'package:flutter_designtest01/design/glogin.dart';
 import 'package:flutter_designtest01/design/testpage1.dart';
@@ -21,13 +23,17 @@ class homeState extends State<home> {
 
   var _login = LoginWidget();
 
+  User? user;
+  Stream? authState;
+
   Completer<GoogleMapController> _controller = Completer();
 
   Map<MarkerId, Marker> markers = <MarkerId, Marker>{}; //마커 테스트
 
   String markerValue1 ='';
   String locaname='';
-  String locaLat='';
+  String locaLat1='';
+  String locaLat2='';
   String locationName = '';
 
   static final CameraPosition _kGooglePlex = CameraPosition(
@@ -49,6 +55,18 @@ class homeState extends State<home> {
   void initState() {
 
     super.initState();
+
+    authState = FirebaseAuth.instance.authStateChanges();
+
+    user = FirebaseAuth.instance.currentUser;
+
+    // if(user != null){
+    //     var userName = user!.email.toString();
+    //     var userEmail = user!.email.toString();
+    //   }else{
+    //   var userName = '사용자 이름';
+    //   var userEmail = '사용자 이메일';
+    // }
     // _markers.add(Marker(
     //     markerId: MarkerId("1"),
     //     draggable: true,
@@ -81,65 +99,9 @@ class homeState extends State<home> {
 
       //사이드 메뉴 drawer
       drawer: Drawer(
-        child: ListView(
-          // padding: EdgeInsets.only(right: 10.0),
-          children: <Widget>[
-            //메뉴 로그인
-            UserAccountsDrawerHeader(
-              // onDetailsPressed: _showDialog,
-                accountName: Text('구글 이름 구현'),
-                accountEmail: Text('구글 이메일 구현'),
-              decoration: BoxDecoration(
-                color: Colors.blueGrey,
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(10),
-                    bottomRight: Radius.circular(10)
-                )
-              ),
-            ),
-            //메뉴 리스트
-            ListTile(
-              leading: Icon( //메뉴1 아이콘
-                Icons.home,
-                color: Colors.grey[850],
-              ),
-              title: Text('메뉴1'), //메뉴1 텍스트
-              onTap: () async{ //메뉴1 동작
-
-              },
-              trailing: Icon(Icons.arrow_forward_ios), //메뉴1 화살표
-            ),
-            ListTile(
-              leading: Icon( //메뉴2 아이콘
-                Icons.account_box,
-                color: Colors.grey[850],
-              ),
-              title: Text('로그인'), //메뉴2 텍스트
-              onTap: () { //메뉴1 동작
-                _login.signInWithGoogle();
-              },
-              trailing: Icon(Icons.arrow_forward_ios), //메뉴1 화살표
-            ),
-            ListTile(
-              leading: Icon( //메뉴3 아이콘
-                Icons.check,
-                color: Colors.grey[850],
-              ),
-              title: Text('응급처치 요령'), //메뉴2 텍스트
-              onTap: () {
-                Navigator.push( //네비게이터
-                    context,
-                    MaterialPageRoute( //페이지 이동
-                        builder: (context) => firstaid()
-                    )
-                );
-              }, //메뉴2 동작
-              trailing: Icon(Icons.arrow_forward_ios), //메뉴2 화살표
-            )
-          ],
-        ),
+        child:
+          DrawerPage()
       ),
-
       //홈 구글맵 구현
       body: StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance.collection('좌표').snapshots(),
@@ -194,10 +156,18 @@ class homeState extends State<home> {
 
           }
       ),
-      // floatingActionButton: FloatingActionButton.extended(
-      //     onPressed: (){}, //변경
-      //     label: Text('이동')
-      // ),
+      floatingActionButton: FloatingActionButton.extended(
+          onPressed: (){
+            Navigator.push(
+              //네비게이터
+                context,
+                MaterialPageRoute(
+                  //페이지 이동
+                    builder: (context) => ReportPage()));
+          }, //변경
+          label: Text('제보')
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
     );
   }
 
@@ -279,7 +249,8 @@ class homeState extends State<home> {
   void getlocainfo(String markerId){
     FirebaseFirestore.instance.collection('좌표').doc(markerId).get().then((ds) {
       locaname = ds.get('name').toString();
-      locaLat = ds.get('stationLocation').latitude.toString();
+      locaLat1 = ds.get('stationLocation').latitude.toString();
+      locaLat2 = ds.get('stationLocation').longitude.toString();
     });
   }
 
@@ -306,7 +277,13 @@ class homeState extends State<home> {
     return locationName;
   }
 
-
+  Text _loginout(){
+    if(user != null){
+      return Text('로그인');
+    }else{
+      return Text('로그아웃');
+    }
+  }
 
   void _showDialog() {
     showDialog(
@@ -320,12 +297,13 @@ class homeState extends State<home> {
         return AlertDialog(
           title: new Text("Alert Dialog title"),
           content: Container(
-            color: Colors.blue,
+            // color: Colors.blue,
               child: Column(
 
                 children: [
                   new Text(locaname),
-                  new Text(locaLat),
+                  new Text(locaLat1),
+                  new Text(locaLat2),
                 ],
 
               )
@@ -342,4 +320,8 @@ class homeState extends State<home> {
       },
     );
   }
+
+
+
+
 }

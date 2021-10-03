@@ -12,8 +12,7 @@ class LoginWidget extends StatelessWidget {
     final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
 
     // Obtain the auth details from the request
-    final GoogleSignInAuthentication googleAuth = await googleUser!
-        .authentication;
+    final GoogleSignInAuthentication googleAuth = await googleUser!.authentication;
 
     // Create a new credential
     final credential = GoogleAuthProvider.credential(
@@ -21,9 +20,14 @@ class LoginWidget extends StatelessWidget {
       idToken: googleAuth.idToken,
     );
 
+    final UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+    final User? user = userCredential.user;
+
+
     // Once signed in, return the UserCredential
     return await FirebaseAuth.instance.signInWithCredential(credential);
   }
+
 
   @override
   Widget build(BuildContext context) {
