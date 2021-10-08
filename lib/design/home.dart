@@ -26,7 +26,8 @@ class homeState extends State<home> {
 
   Completer<GoogleMapController> _controller = Completer();
 
-  Map<MarkerId, Marker> markers = <MarkerId, Marker>{}; //마커 테스트
+
+  Map<MarkerId, Marker> markers = <MarkerId, Marker>{}; //마커
   LatLng tapMap = LatLng(37.45662871370885, 126.95005995529378);
 
   String markerValue1 = '';
@@ -299,7 +300,7 @@ class homeState extends State<home> {
         // });
         print('dialog : ' + locaname);
         return AlertDialog(
-          title: new Text("Alert Dialog title"),
+          title: new Text("제보 화면 보기"),
           content: Container(
               // color: Colors.blue,
               child: Column(
