@@ -6,8 +6,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_designtest01/design/ReportGooglemap.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
+
+LatLng? tapLatLng;
 
 class ReportPage extends StatefulWidget {
   const ReportPage({Key? key, this.tapLatLng}) : super(key: key);
@@ -125,14 +128,17 @@ class _ReportPageState extends State<ReportPage> {
             ),
 
           ),
+          Container(
+            margin: EdgeInsets.all(8),
+            child:Text('사진첨부'),
+          ),
           ListTile(
             title: Text('사진첨부'),
-            leading: Container(
-            child: Text('qweqwewq'),
-            // SizedBox(
-            //   height: 100,
-            //   width: 100,
-            //   child: _image == null ? Text('사진없음') : Image.file(_image!)
+            leading:
+            SizedBox(
+              height: 100,
+              width: 100,
+              child: _image == null ? Text('사진없음') : Image.file(_image!)
             ),
             onTap: (){
               setState(() {
@@ -140,6 +146,21 @@ class _ReportPageState extends State<ReportPage> {
               });
             },
 
+          ),
+          Container(
+            margin: EdgeInsets.all(8),
+            child:Text('위치'),
+          ),
+          ListTile(
+            title: Text('좌표 : ' + ''),
+            onTap: (){
+              Navigator.push(
+              //네비게이터
+              context,
+              MaterialPageRoute(
+              //페이지 이동
+              builder: (context) => ReportGooglemap()));
+            },
           ),
           ElevatedButton(
             child: Text('제보하기'),

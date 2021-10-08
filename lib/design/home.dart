@@ -10,6 +10,7 @@ import 'package:flutter_designtest01/design/glogin.dart';
 import 'package:flutter_designtest01/design/testpage1.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:location/location.dart';
 
 class home extends StatefulWidget {
   @override
@@ -49,7 +50,16 @@ class homeState extends State<home> {
 
   // Map<MarkerId,Marker> markers = <MarkerId,Marker>{};
 
-  // Stream<QuerySnapshot> collectionStraem = FirebaseFirestore.instance.collection('제보').snapshots();
+  // // Stream<QuerySnapshot> collectionStraem = FirebaseFirestore.instance.collection('제보').snapshots();
+  //
+  // Future<Position> getCurrentLocation() async {
+  //   Position position = await Geolocator.getCurrentPosition(
+  //       desiredAccuracy: LocationAccuracy.high);
+  //
+  //   print(position.latitude);
+  //   print( position.longitude);
+  //   return position;
+  // }
 
   @override
   void initState() {
@@ -58,7 +68,7 @@ class homeState extends State<home> {
     authState = FirebaseAuth.instance.authStateChanges();
 
     user = FirebaseAuth.instance.currentUser;
-
+    // getCurrentLocation();
     // if(user != null){
     //     var userName = user!.email.toString();
     //     var userEmail = user!.email.toString();
@@ -83,7 +93,7 @@ class homeState extends State<home> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('메인페이지(구글지도)'),
+        title: Text('주변 응급 상황'),
         actions: <Widget>[
           IconButton(
             onPressed: () {}, //검색버튼(임시) 새로고침?
@@ -140,6 +150,7 @@ class homeState extends State<home> {
                 initialCameraPosition: _kGooglePlex,
                 myLocationButtonEnabled: true,
                 myLocationEnabled: true,
+
                 markers: Set<Marker>.of(markers.values),
                 onTap: (LatLng latlng) {
                   print(latlng);
@@ -163,13 +174,15 @@ class homeState extends State<home> {
           }),
       floatingActionButton: FloatingActionButton.extended(
           onPressed: () {
-            Navigator.push(
-                //네비게이터
-                context,
-                MaterialPageRoute(
-                    //페이지 이동
-                    builder: (context) => ReportPage(tapLatLng: tapMap),
-                ));
+            _currentLocation();
+            // getCurrentLocation();
+            // Navigator.push(
+            //     //네비게이터
+            //     context,
+            //     MaterialPageRoute(
+            //         //페이지 이동
+            //         builder: (context) => ReportPage(tapLatLng: tapMap),
+            //     ));
           }, //변경
           label: Text('제보')),
       floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
@@ -289,7 +302,24 @@ class homeState extends State<home> {
     });
     return locationName;
   }
+  void _currentLocation() async {
+    final GoogleMapController controller = await _controller.future;
+    LocationData? currentLocation;
+    var location = new Location();
+    try {
+      currentLocation = await location.getLocation();
+    } on Exception {
+      currentLocation = null;
+    }
 
+    controller.animateCamera(CameraUpdate.newCameraPosition(
+      CameraPosition(
+        bearing: 0,
+        target: LatLng(currentLocation!.latitude!.toDouble(), currentLocation.longitude!.toDouble()),
+        zoom: 14.0,
+      ),
+    ));
+  }
   void _showDialog() {
     showDialog(
       context: context,
