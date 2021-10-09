@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_designtest01/design/DrawerPage.dart';
 import 'package:flutter_designtest01/design/ReportPage.dart';
@@ -17,6 +18,7 @@ class home extends StatefulWidget {
   State<home> createState() => homeState();
 }
 
+
 class homeState extends State<home> {
   CollectionReference users = FirebaseFirestore.instance.collection('user');
 
@@ -27,15 +29,17 @@ class homeState extends State<home> {
 
   Completer<GoogleMapController> _controller = Completer();
 
-
   Map<MarkerId, Marker> markers = <MarkerId, Marker>{}; //마커
-  LatLng tapMap = LatLng(37.45662871370885, 126.95005995529378);
 
+  LatLng tapMap = LatLng(37.45662871370885, 126.95005995529378);
   String markerValue1 = '';
   String locaname = '';
   String locaLat1 = '';
   String locaLat2 = '';
   String locationName = '';
+  LatLng currentPosition = LatLng(0, 0);
+  var location = new Location();
+  String imageUrl= '';
 
   static final CameraPosition _kGooglePlex = CameraPosition(
     target: LatLng(37.45662871370885, 126.95005995529378),
@@ -68,6 +72,9 @@ class homeState extends State<home> {
     authState = FirebaseAuth.instance.authStateChanges();
 
     user = FirebaseAuth.instance.currentUser;
+    currentLocation();
+
+
     // getCurrentLocation();
     // if(user != null){
     //     var userName = user!.email.toString();
@@ -109,11 +116,12 @@ class homeState extends State<home> {
       //사이드 메뉴 drawer
       drawer: Drawer(child: DrawerPage()),
       //홈 구글맵 구현
-      body: StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance.collection('좌표').snapshots(),
+      body: currentPosition == LatLng(0, 0) ? Center(child: CircularProgressIndicator()) :
+      StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance.collection('제보').snapshots(),
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
-              return CircularProgressIndicator();
+              return Center(child: CircularProgressIndicator());
             } else {
               print("스트림빌더 작동");
               markers = {}; // 마커 초기화
@@ -123,15 +131,19 @@ class homeState extends State<home> {
                 markers[markerId] = Marker(
                   markerId: markerId,
                   onTap: () {
-                    markerValue1 = markerIdVal;
+                    setState(() {
+                      markerValue1 = markerIdVal;
+                      printUrl();
+                    });
                     getlocainfo(markerValue1);
                     print(markerIdVal);
+
                   },
-                  position: LatLng(change['stationLocation'].latitude,
-                      change['stationLocation'].longitude),
+                  position: LatLng(change['좌표'].latitude,
+                      change['좌표'].longitude),
                   infoWindow: InfoWindow(
-                    title: change['name'],
-                    snippet: '정보 추가',
+                    title: change['유형'] == '' ? '설명없음' : change['유형'],
+                    snippet: change['설명'] == '' ? '설명없음' : change['설명'],
                     onTap: () {
                       _showDialog();
                     },
@@ -147,22 +159,25 @@ class homeState extends State<home> {
               });
               return GoogleMap(
                 mapType: MapType.normal,
-                initialCameraPosition: _kGooglePlex,
+                initialCameraPosition: CameraPosition(
+                  target: currentPosition,
+                  zoom: 14.4746,
+                ),
                 myLocationButtonEnabled: true,
                 myLocationEnabled: true,
 
                 markers: Set<Marker>.of(markers.values),
-                onTap: (LatLng latlng) {
-                  print(latlng);
-                  tapMap = latlng;
-                  // Marker marker =
-                  //     Marker(markerId: MarkerId('tap'), position: tapMap);
-                  // markers[MarkerId('tap')] =
-                  //     Marker(markerId: MarkerId('tap'), position: tapMap);
-                  // setState(() {
-                  //   markers[MarkerId('tap')] = marker; //ui 업데이트
-                  // });
-                },
+                // onTap: (LatLng latlng) {
+                //   print(latlng);
+                //   tapMap = latlng;
+                //   Marker marker =
+                //       Marker(markerId: MarkerId('tap'), position: tapMap);
+                //   markers[MarkerId('tap')] =
+                //       Marker(markerId: MarkerId('tap'), position: tapMap);
+                //   setState(() {
+                //     markers[MarkerId('tap')] = marker; //ui 업데이트
+                //   });
+                // },
 
                 //마커
                 onMapCreated: (GoogleMapController controller) {
@@ -174,15 +189,13 @@ class homeState extends State<home> {
           }),
       floatingActionButton: FloatingActionButton.extended(
           onPressed: () {
-            _currentLocation();
-            // getCurrentLocation();
-            // Navigator.push(
-            //     //네비게이터
-            //     context,
-            //     MaterialPageRoute(
-            //         //페이지 이동
-            //         builder: (context) => ReportPage(tapLatLng: tapMap),
-            //     ));
+            Navigator.push(
+                //네비게이터
+                context,
+                MaterialPageRoute(
+                    //페이지 이동
+                    builder: (context) => ReportPage(tapLatLng: tapMap),
+                ));
           }, //변경
           label: Text('제보')),
       floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
@@ -226,10 +239,10 @@ class homeState extends State<home> {
     final MarkerId markerId = MarkerId(markerIdVal);
     final Marker marker = Marker(
         markerId: markerId,
-        position: LatLng(specify['stationLocation'].latitude,
-            specify['stationLocation'].longitude),
+        position: LatLng(specify['좌표'].latitude,
+            specify['좌표'].longitude),
         infoWindow: InfoWindow(
-            title: specify['name'], snippet: specify['stationAddress']),
+            title: specify['설명'] == null ? ' ' : specify['설명'], snippet: specify['stationAddress']),
         onTap: () {
           //마커 동작
           print('마커!');
@@ -257,7 +270,7 @@ class homeState extends State<home> {
 
   Future<String> _getAppBarNameWidget() async {
     await FirebaseFirestore.instance.collection('좌표').get().then((ds) async {
-      var name = ds.docs[1].get('name');
+      var name = ds.docs[1].get('설명');
       print(name);
       return name;
     });
@@ -265,21 +278,21 @@ class homeState extends State<home> {
   }
 
   void getlocainfo(String markerId) {
-    FirebaseFirestore.instance.collection('좌표').doc(markerId).get().then((ds) {
-      locaname = ds.get('name').toString();
-      locaLat1 = ds.get('stationLocation').latitude.toString();
-      locaLat2 = ds.get('stationLocation').longitude.toString();
+    FirebaseFirestore.instance.collection('제보').doc(markerId).get().then((ds) {
+      locaname = ds.get('설명').toString();
+      locaLat1 = ds.get('좌표').latitude.toString();
+      locaLat2 = ds.get('좌표').longitude.toString();
     });
   }
 
   Future<String> asd1234() async {
     await FirebaseFirestore.instance
-        .collection('좌표')
+        .collection('제보')
         .doc(markerValue1)
         .get()
         .then((ds) async {
       // var name = ds.docs[0].get('name');
-      var name = ds.get('name');
+      var name = ds.get('설명');
       print(name);
       print(markerValue1.toString());
       return name;
@@ -294,7 +307,7 @@ class homeState extends State<home> {
         .get()
         .then((ds) {
       // var name = ds.docs[0].get('name');
-      locaname = ds.get('name').toString();
+      locaname = ds.get('설명').toString();
 
       print('locaname : ' + locaname);
       print('markerValue1.toString : ' + markerValue1.toString());
@@ -302,24 +315,24 @@ class homeState extends State<home> {
     });
     return locationName;
   }
-  void _currentLocation() async {
-    final GoogleMapController controller = await _controller.future;
-    LocationData? currentLocation;
-    var location = new Location();
-    try {
-      currentLocation = await location.getLocation();
-    } on Exception {
-      currentLocation = null;
-    }
 
-    controller.animateCamera(CameraUpdate.newCameraPosition(
-      CameraPosition(
-        bearing: 0,
-        target: LatLng(currentLocation!.latitude!.toDouble(), currentLocation.longitude!.toDouble()),
-        zoom: 14.0,
-      ),
-    ));
+  Future<void> currentLocation() async {
+    LocationData _locationData;
+    _locationData = await location.getLocation();
+    setState(() {
+      currentPosition = LatLng(_locationData.latitude!.toDouble(), _locationData.longitude!.toDouble());
+      print(currentPosition.toString());
+    });
   }
+
+  printUrl() async {
+    String url = (await FirebaseStorage.instance.ref().child('images/${markerValue1}').getDownloadURL()).toString();
+    // print(url);
+    setState(() {
+      imageUrl = url;
+    });
+  }
+
   void _showDialog() {
     showDialog(
       context: context,
@@ -338,6 +351,8 @@ class homeState extends State<home> {
               new Text(locaname),
               new Text(locaLat1),
               new Text(locaLat2),
+              new Text(markerValue1),
+              new Image.network(imageUrl),
             ],
           )),
           actions: <Widget>[
