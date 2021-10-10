@@ -2,11 +2,14 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_designtest01/design/DrawerPage.dart';
 import 'package:flutter_designtest01/design/ReportGooglemap.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
@@ -38,12 +41,14 @@ class _ReportPageState extends State<ReportPage> {
   GeoPoint currentGeo = GeoPoint(0, 0);
   var location = new Location();
   String _choise = '';
+  String userUid = '';
 
   @override
   void initState() {
     super.initState();
     _image = null;
     currentLocation();
+    FirebaseAuth.instance.currentUser == null ? userUid = '' : userUid = FirebaseAuth.instance.currentUser!.uid;
   }
 
   @override
@@ -210,8 +215,9 @@ class _ReportPageState extends State<ReportPage> {
   }
 
   Future<void> _testadd() async {
-    //데이터 삽입 테스트
+    //데이터 삽입
     FirebaseFirestore.instance.collection('제보').add({
+      'uid' : userUid,
       '긴급도': _emer.toString(),
       '설명': _comment,
       '유형': _selectedValue,

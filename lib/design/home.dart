@@ -6,6 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_designtest01/design/DrawerPage.dart';
 import 'package:flutter_designtest01/design/ReportPage.dart';
+import 'package:flutter_designtest01/design/ShowDialog.dart';
 import 'package:flutter_designtest01/design/firstAid.dart';
 import 'package:flutter_designtest01/design/glogin.dart';
 import 'package:flutter_designtest01/design/testpage1.dart';
@@ -131,13 +132,11 @@ class homeState extends State<home> {
                 markers[markerId] = Marker(
                   markerId: markerId,
                   onTap: () {
-                    setState(() {
-                      markerValue1 = markerIdVal;
-                      printUrl();
-                    });
-                    getlocainfo(markerValue1);
-                    print(markerIdVal);
-
+                    // setState(() {
+                    //   // markerValue1 = markerIdVal;
+                    //   // printUrl();
+                    // });
+                    // getlocainfo(markerValue1);
                   },
                   position: LatLng(change['좌표'].latitude,
                       change['좌표'].longitude),
@@ -145,9 +144,18 @@ class homeState extends State<home> {
                     title: change['유형'] == '' ? '설명없음' : change['유형'],
                     snippet: change['설명'] == '' ? '설명없음' : change['설명'],
                     onTap: () {
-                      _showDialog();
-                    },
+                      setState(() {
 
+                        markerValue1 = markerIdVal;
+                        print(markerIdVal);
+                      });
+                      showDialog(
+                          context: context,
+                          builder: (BuildContext context){
+                            return ShowDialog();
+                          },
+                      );
+                    },
                     //       (){
                     //     Navigator.push(context, MaterialPageRoute(
                     //     builder: (context) => testpage1()
@@ -189,13 +197,17 @@ class homeState extends State<home> {
           }),
       floatingActionButton: FloatingActionButton.extended(
           onPressed: () {
-            Navigator.push(
+            if(FirebaseAuth.instance.currentUser == null){
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('로그인이 필요합니다.')));
+            }else{
+              Navigator.push(
                 //네비게이터
-                context,
-                MaterialPageRoute(
+                  context,
+                  MaterialPageRoute(
                     //페이지 이동
                     builder: (context) => ReportPage(tapLatLng: tapMap),
-                ));
+                  ));
+            }
           }, //변경
           label: Text('제보')),
       floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
@@ -337,22 +349,26 @@ class homeState extends State<home> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        // FirebaseFirestore.instance.collection('좌표').doc(markerValue1.toString()).get().then((makerInfo) {
-        //   String locationName =  makerInfo['name'].toString();
-        //   print(locationName);
-        // });
-        print('dialog : ' + locaname);
+        FirebaseFirestore.instance.collection('제보').doc(markerValue1.toString()).get().then((makerInfo) {
+          setState(() {
+            locaname = makerInfo['uid'];
+            String locationName =  makerInfo['설명'].toString();
+            locaLat1 = makerInfo['유형'].toString();
+            print('다이얼로그 설명 : '  + locationName);
+          });
+        });
+        print('dialog : ' + markerValue1);
         return AlertDialog(
           title: new Text("제보 화면 보기"),
           content: Container(
               // color: Colors.blue,
               child: Column(
             children: [
-              new Text(locaname),
-              new Text(locaLat1),
-              new Text(locaLat2),
-              new Text(markerValue1),
-              new Image.network(imageUrl),
+              new Text(locationName),
+              // new Text(infoTime),
+              // new Text(locaLat2),
+              // new Text(markerValue1),
+              // new Image.network(imageUrl),
             ],
           )),
           actions: <Widget>[
