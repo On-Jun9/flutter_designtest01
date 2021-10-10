@@ -152,7 +152,7 @@ class homeState extends State<home> {
                       showDialog(
                           context: context,
                           builder: (BuildContext context){
-                            return ShowDialog();
+                            return ShowDialog(markerValue1: markerValue1);
                           },
                       );
                     },
