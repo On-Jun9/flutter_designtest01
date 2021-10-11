@@ -48,7 +48,9 @@ class _ReportPageState extends State<ReportPage> {
     super.initState();
     _image = null;
     currentLocation();
-    FirebaseAuth.instance.currentUser == null ? userUid = '' : userUid = FirebaseAuth.instance.currentUser!.uid;
+    FirebaseAuth.instance.currentUser == null
+        ? userUid = ''
+        : userUid = FirebaseAuth.instance.currentUser!.uid;
   }
 
   @override
@@ -58,7 +60,7 @@ class _ReportPageState extends State<ReportPage> {
       body: ListView(children: <Widget>[
         Container(
           margin: EdgeInsets.all(8),
-          child: Text('긴급도'),
+          child: Text('긴급도', style: TextStyle(fontWeight: FontWeight.bold)),
         ),
         ListTile(
           //ListTile - title에는 내용,
@@ -100,10 +102,10 @@ class _ReportPageState extends State<ReportPage> {
         ),
         Container(
           margin: EdgeInsets.all(8),
-          child: Text('응급유형'),
+          child: Text('유형', style: TextStyle(fontWeight: FontWeight.bold)),
         ),
         Container(
-            margin: EdgeInsets.all(8),
+            margin: EdgeInsets.fromLTRB(20,8,8,8),
             child: DropdownButton(
               value: _selectedValue,
               items: _valueList.map(
@@ -120,65 +122,114 @@ class _ReportPageState extends State<ReportPage> {
                 });
               },
             )),
-        TextFormField(
-          // initialValue: '제보내용',
-          maxLength: 20,
-          onChanged: (text) {
-            _comment = text;
-          },
-          decoration: InputDecoration(
-            icon: Icon(Icons.text_format),
-            labelText: '설명',
-            helperText: '상황 설명',
-            suffixIcon: Icon(
-              Icons.check_circle,
+        Container(
+          margin: EdgeInsets.all(8),
+          child: Text('설명', style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+        Container(
+          margin: EdgeInsets.fromLTRB(20,8,8,8),
+          child: TextFormField(
+            autofocus: false,
+            // initialValue: '제보내용',
+            maxLength: 20,
+            onChanged: (text) {
+              _comment = text;
+            },
+            decoration: InputDecoration(
+              // icon: Icon(Icons.text_format),
+              // labelText: '설명',
+              helperText: '상황 설명',
+              suffixIcon: Icon(
+                Icons.check_circle,
+              ),
+              border: OutlineInputBorder(),
             ),
           ),
         ),
         Container(
           margin: EdgeInsets.all(8),
-          child: Text('사진첨부'),
+          child: Text('사진첨부', style: TextStyle(fontWeight: FontWeight.bold)),
         ),
-        ListTile(
-          title: Text('사진첨부'),
-          leading: SizedBox(
-              height: 100,
-              width: 100,
-              child: _image == null ? Text('사진없음') : Image.file(_image!)),
-          onTap: () {
-            setState(() {
-              _takePhoto(ImageSource.gallery);
-            });
-          },
+        // ListTile(
+        //   // title: Text('사진첨부'),
+        //   leading: Center(
+        //     child:
+        //   ),
+        //   // onTap: () {
+        //   //   setState(() {
+        //   //     _takePhoto(ImageSource.gallery);
+        //   //   });
+        //   // },
+        // ),
+        Container(
+          child: SizedBox(
+            height: 100,
+            width: 100,
+            child: _image == null
+                ? Center(child: Text('사진없음'))
+                : Image.file(_image!),
+          ),
         ),
+        TextButton(
+            onPressed: () {
+              setState(() {
+                _takePhoto(ImageSource.gallery);
+              });
+            },
+            child: Text('갤러리')),
         Container(
           margin: EdgeInsets.all(8),
-          child: Text('위치'),
+          child: Text('위치', style: TextStyle(fontWeight: FontWeight.bold)),
         ),
-        ListTile(
-          title: Text('좌표 \n' + _choise),
-          onTap: () async {
-            final result = await Navigator.push(
-                //네비게이터
-                context,
-                MaterialPageRoute(
-                    //페이지 이동
-                    builder: (context) => ReportGooglemap()));
-            print(result);
-            setState(() {
-              result == null
-                  ? print(result)
-                  : _choise = result.latitude.toString() +
-                      ' , ' +
-                      result.longitude.toString();
-              result == null
-                  ? print(result)
-                  : currentGeo = GeoPoint(result.latitude!.toDouble(),
-                      result.longitude!.toDouble());
-              ;
-            });
-          },
+        Container(
+          margin: EdgeInsets.all(18),
+          child: Text(_choise),
         ),
+        // ListTile(
+        //   title: Text('좌표 \n' + _choise),
+        //   onTap: () async {
+        //     final result = await Navigator.push(
+        //         //네비게이터
+        //         context,
+        //         MaterialPageRoute(
+        //             //페이지 이동
+        //             builder: (context) => ReportGooglemap()));
+        //     print(result);
+        //     setState(() {
+        //       result == null
+        //           ? print(result)
+        //           : _choise = result.latitude.toString() +
+        //               ' , ' +
+        //               result.longitude.toString();
+        //       result == null
+        //           ? print(result)
+        //           : currentGeo = GeoPoint(result.latitude!.toDouble(),
+        //               result.longitude!.toDouble());
+        //     });
+        //   },
+        // ),
+        TextButton(
+            onPressed: () async {
+              final result = await Navigator.push(
+                  //네비게이터
+                  context,
+                  MaterialPageRoute(
+                      //페이지 이동
+                      builder: (context) => ReportGooglemap()));
+              print(result);
+              setState(() {
+                result == null
+                    ? print(result)
+                    : _choise = result.latitude.toString() +
+                        ' , ' +
+                        result.longitude.toString();
+                result == null
+                    ? print(result)
+                    : currentGeo = GeoPoint(result.latitude!.toDouble(),
+                        result.longitude!.toDouble());
+              });
+            },
+            child: Text('위치 변경')),
         ElevatedButton(
           child: Text('제보하기'),
           onPressed: () {
@@ -192,7 +243,8 @@ class _ReportPageState extends State<ReportPage> {
   }
 
   Future _takePhoto(ImageSource imageSource) async {
-    var image = await ImagePicker().pickImage(source: imageSource,maxHeight: 300,maxWidth: 300);
+    var image = await ImagePicker()
+        .pickImage(source: imageSource, maxHeight: 300, maxWidth: 300);
     setState(() {
       image == null ? _image = null : _image = File(image.path);
     });
@@ -217,20 +269,23 @@ class _ReportPageState extends State<ReportPage> {
   Future<void> _testadd() async {
     //데이터 삽입
     FirebaseFirestore.instance.collection('제보').add({
-      'uid' : userUid,
+      'uid': userUid,
       '긴급도': _emer.toString(),
       '설명': _comment,
       '유형': _selectedValue,
       '좌표': currentGeo,
       '제보시간': FieldValue.serverTimestamp()
     }).then((value) => {
-      if (_image == null) {
-        print('no Image')
-      }else{
-        FirebaseStorage.instance.ref().child('images/${value.id}').putFile(_image!),
-  }
-    })
-    ;
+          if (_image == null)
+            {print('no Image')}
+          else
+            {
+              FirebaseStorage.instance
+                  .ref()
+                  .child('images/${value.id}')
+                  .putFile(_image!),
+            }
+        });
   }
 
   void _uploadImage() async {
