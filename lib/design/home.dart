@@ -19,7 +19,6 @@ class home extends StatefulWidget {
   State<home> createState() => homeState();
 }
 
-
 class homeState extends State<home> {
   CollectionReference users = FirebaseFirestore.instance.collection('user');
 
@@ -40,7 +39,13 @@ class homeState extends State<home> {
   String locationName = '';
   LatLng currentPosition = LatLng(0, 0);
   var location = new Location();
-  String imageUrl= '';
+  String imageUrl = '';
+
+  int sliderVal = 10;
+  int _markerTime = 10;
+
+  Stream<QuerySnapshot> _stream =
+      FirebaseFirestore.instance.collection('제보').snapshots();
 
   static final CameraPosition _kGooglePlex = CameraPosition(
     target: LatLng(37.45662871370885, 126.95005995529378),
@@ -74,27 +79,6 @@ class homeState extends State<home> {
 
     user = FirebaseAuth.instance.currentUser;
     currentLocation();
-
-
-    // getCurrentLocation();
-    // if(user != null){
-    //     var userName = user!.email.toString();
-    //     var userEmail = user!.email.toString();
-    //   }else{
-    //   var userName = '사용자 이름';
-    //   var userEmail = '사용자 이메일';
-    // }
-    // _markers.add(Marker(
-    //     markerId: MarkerId("1"),
-    //     draggable: true,
-    //     // onTap: () => print("Marker!"),
-    //     infoWindow: InfoWindow(title: 'SEOUL', snippet: 'welcome'),
-    //     position: LatLng(37.56421135, 127.0016985)));
-    // _markers.add(Marker(
-    //   markerId: MarkerId("2"),
-    //   draggable: true,
-    //   infoWindow: InfoWindow(title: 'SEOUL', snippet: 'welcome'),
-    //   position: LatLng(37.45662871370885, 126.95005995529378)));
   }
 
   @override
@@ -104,11 +88,44 @@ class homeState extends State<home> {
         title: Text('주변 응급 상황'),
         actions: <Widget>[
           IconButton(
-            onPressed: () {}, //검색버튼(임시) 새로고침?
-            icon: Icon(Icons.search),
-          ),
-          IconButton(
-            onPressed: () {}, //설정버튼(임시)
+            onPressed: () {
+              sliderVal = _markerTime;
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return StatefulBuilder(builder: (context, setState) {
+                    return SimpleDialog(
+                      title: Text('마커 시간 설정'),
+                      children: [
+                        Center(
+                            child:
+                                Text('현재 설정값 : ${_markerTime.toString()} 분')),
+                        Slider(
+                            value: sliderVal.toDouble(),
+                            min: 0,
+                            max: 60,
+                            divisions: 12,
+                            label: sliderVal.toString() + ' 분',
+                            onChanged: (double value) {
+                              setState(() {
+                                sliderVal = value.round();
+                              });
+                            }),
+                        Center(child: Text('0 으로 설정시 모든 마커를 보여줍니다'),),
+                        TextButton(
+                          child: new Text('설정'),
+                          onPressed: () {
+                            _markerTime = sliderVal;
+                            currentLocation();
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ],
+                    );
+                  });
+                },
+              );
+            }, //설정버튼(임시)
             icon: Icon(Icons.more_vert),
           ),
         ],
@@ -117,91 +134,98 @@ class homeState extends State<home> {
       //사이드 메뉴 drawer
       drawer: Drawer(child: DrawerPage()),
       //홈 구글맵 구현
-      body: currentPosition == LatLng(0, 0) ? Center(child: CircularProgressIndicator()) :
-      StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance.collection('제보').snapshots(),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) {
-              return Center(child: CircularProgressIndicator());
-            } else {
-              print("스트림빌더 작동");
-              markers = {}; // 마커 초기화
-              snapshot.data!.docs.forEach((change) {
-                var markerIdVal = change.id;
-                final MarkerId markerId = MarkerId(markerIdVal);
-                markers[markerId] = Marker(
-                  markerId: markerId,
-                  onTap: () {
-                    // setState(() {
-                    //   // markerValue1 = markerIdVal;
-                    //   // printUrl();
-                    // });
-                    // getlocainfo(markerValue1);
-                  },
-                  position: LatLng(change['좌표'].latitude,
-                      change['좌표'].longitude),
-                  infoWindow: InfoWindow(
-                    title: change['유형'] == '' ? '설명없음' : change['유형'],
-                    snippet: change['설명'] == '' ? '설명없음' : change['설명'],
-                    onTap: () {
-                      setState(() {
-
-                        markerValue1 = markerIdVal;
-                        print(markerIdVal);
-                      });
-                      showDialog(
-                          context: context,
-                          builder: (BuildContext context){
-                            return ShowDialog(markerValue1: markerValue1);
+      body: currentPosition == LatLng(0, 0)
+          ? Center(child: CircularProgressIndicator())
+          : StreamBuilder<QuerySnapshot>(
+              stream: _stream,
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return Center(child: CircularProgressIndicator());
+                } else {
+                  print("스트림빌더 작동");
+                  markers = {}; // 마커 초기화
+                  snapshot.data!.docs.forEach((change) {
+                    // print(DateTime.now().difference(change['제보시간'].toDate()).inMinutes);
+                    if (_markerTime != 0 ? _markerTime > DateTime.now().difference(change['제보시간'].toDate()).inMinutes : true) {
+                      //10분 체크
+                      var markerIdVal = change.id;
+                      final MarkerId markerId = MarkerId(markerIdVal);
+                      markers[markerId] = Marker(
+                        markerId: markerId,
+                        onTap: () {
+                          print(_markerTime.toString());
+                          setState(() {
+                            // markerValue1 = markerIdVal;
+                            // printUrl();
+                          });
+                          // getlocainfo(markerValue1);
+                        },
+                        position: LatLng(
+                            change['좌표'].latitude, change['좌표'].longitude),
+                        infoWindow: InfoWindow(
+                          title: change['유형'] == '' ? '설명없음' : change['유형'],
+                          snippet: change['설명'] == '' ? '설명없음' : change['설명'],
+                          onTap: () {
+                            setState(() {
+                              markerValue1 = markerIdVal;
+                              print(markerIdVal);
+                            });
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return ShowDialog(markerValue1: markerValue1);
+                              },
+                            );
                           },
+                          //       (){
+                          //     Navigator.push(context, MaterialPageRoute(
+                          //     builder: (context) => testpage1()
+                          //     )
+                          //   );
+                          // }
+                        ),
                       );
+                    }
+                    // print(DateTime.now().difference(change['제보시간'].toDate()).inHours.toString());
+                  });
+                  return GoogleMap(
+                    mapType: MapType.normal,
+                    initialCameraPosition: CameraPosition(
+                      target: currentPosition,
+                      zoom: 14.4746,
+                    ),
+                    myLocationButtonEnabled: true,
+                    myLocationEnabled: true,
+
+                    markers: Set<Marker>.of(markers.values),
+                    // onTap: (LatLng latlng) {
+                    //   print(latlng);
+                    //   tapMap = latlng;
+                    //   Marker marker =
+                    //       Marker(markerId: MarkerId('tap'), position: tapMap);
+                    //   markers[MarkerId('tap')] =
+                    //       Marker(markerId: MarkerId('tap'), position: tapMap);
+                    //   setState(() {
+                    //     markers[MarkerId('tap')] = marker; //ui 업데이트
+                    //   });
+                    // },
+
+                    //마커
+                    onMapCreated: (GoogleMapController controller) {
+                      _controller.complete(controller);
+                      print("구글맵 로딩");
                     },
-                    //       (){
-                    //     Navigator.push(context, MaterialPageRoute(
-                    //     builder: (context) => testpage1()
-                    //     )
-                    //   );
-                    // }
-                  ),
-                );
-              });
-              return GoogleMap(
-                mapType: MapType.normal,
-                initialCameraPosition: CameraPosition(
-                  target: currentPosition,
-                  zoom: 14.4746,
-                ),
-                myLocationButtonEnabled: true,
-                myLocationEnabled: true,
-
-                markers: Set<Marker>.of(markers.values),
-                // onTap: (LatLng latlng) {
-                //   print(latlng);
-                //   tapMap = latlng;
-                //   Marker marker =
-                //       Marker(markerId: MarkerId('tap'), position: tapMap);
-                //   markers[MarkerId('tap')] =
-                //       Marker(markerId: MarkerId('tap'), position: tapMap);
-                //   setState(() {
-                //     markers[MarkerId('tap')] = marker; //ui 업데이트
-                //   });
-                // },
-
-                //마커
-                onMapCreated: (GoogleMapController controller) {
-                  _controller.complete(controller);
-                  print("구글맵 로딩");
-                },
-              );
-            }
-          }),
+                  );
+                }
+              }),
       floatingActionButton: FloatingActionButton.extended(
           onPressed: () {
-            if(FirebaseAuth.instance.currentUser == null){
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('로그인이 필요합니다.')));
-            }else{
+            if (FirebaseAuth.instance.currentUser == null) {
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(SnackBar(content: Text('로그인이 필요합니다.')));
+            } else {
               Navigator.push(
-                //네비게이터
+                  //네비게이터
                   context,
                   MaterialPageRoute(
                     //페이지 이동
@@ -251,10 +275,10 @@ class homeState extends State<home> {
     final MarkerId markerId = MarkerId(markerIdVal);
     final Marker marker = Marker(
         markerId: markerId,
-        position: LatLng(specify['좌표'].latitude,
-            specify['좌표'].longitude),
+        position: LatLng(specify['좌표'].latitude, specify['좌표'].longitude),
         infoWindow: InfoWindow(
-            title: specify['설명'] == null ? ' ' : specify['설명'], snippet: specify['stationAddress']),
+            title: specify['설명'] == null ? ' ' : specify['설명'],
+            snippet: specify['stationAddress']),
         onTap: () {
           //마커 동작
           print('마커!');
@@ -332,13 +356,18 @@ class homeState extends State<home> {
     LocationData _locationData;
     _locationData = await location.getLocation();
     setState(() {
-      currentPosition = LatLng(_locationData.latitude!.toDouble(), _locationData.longitude!.toDouble());
+      currentPosition = LatLng(_locationData.latitude!.toDouble(),
+          _locationData.longitude!.toDouble());
       print(currentPosition.toString());
     });
   }
 
   printUrl() async {
-    String url = (await FirebaseStorage.instance.ref().child('images/${markerValue1}').getDownloadURL()).toString();
+    String url = (await FirebaseStorage.instance
+            .ref()
+            .child('images/${markerValue1}')
+            .getDownloadURL())
+        .toString();
     // print(url);
     setState(() {
       imageUrl = url;
@@ -349,12 +378,16 @@ class homeState extends State<home> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        FirebaseFirestore.instance.collection('제보').doc(markerValue1.toString()).get().then((makerInfo) {
+        FirebaseFirestore.instance
+            .collection('제보')
+            .doc(markerValue1.toString())
+            .get()
+            .then((makerInfo) {
           setState(() {
             locaname = makerInfo['uid'];
-            String locationName =  makerInfo['설명'].toString();
+            String locationName = makerInfo['설명'].toString();
             locaLat1 = makerInfo['유형'].toString();
-            print('다이얼로그 설명 : '  + locationName);
+            print('다이얼로그 설명 : ' + locationName);
           });
         });
         print('dialog : ' + markerValue1);
