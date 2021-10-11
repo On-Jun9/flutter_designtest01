@@ -192,7 +192,7 @@ class _ReportPageState extends State<ReportPage> {
   }
 
   Future _takePhoto(ImageSource imageSource) async {
-    var image = await ImagePicker().pickImage(source: imageSource);
+    var image = await ImagePicker().pickImage(source: imageSource,maxHeight: 300,maxWidth: 300);
     setState(() {
       image == null ? _image = null : _image = File(image.path);
     });

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 
 class ShowDialog extends StatefulWidget {
@@ -14,15 +15,16 @@ class ShowDialog extends StatefulWidget {
 }
 
 class _ShowDialogState extends State<ShowDialog> {
-
   String imageUrl = '';
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
+    initializeDateFormatting();
     printUrl();
   }
+
   @override
   Widget build(BuildContext context) {
     var getData = FirebaseFirestore.instance
@@ -44,37 +46,71 @@ class _ShowDialogState extends State<ShowDialog> {
           var _time = snapshot.data!['제보시간'].toDate().add(Duration(hours: 9));
           Timestamp(1633859188, 529000000).seconds;
           return AlertDialog(
-            title: Text('제보 화면 보기'),
+            title: Text('상황 정보',style: TextStyle(fontWeight: FontWeight.bold)),
             content: SingleChildScrollView(
               child: ListBody(
                 children: [
                   // Text(widget.markerValue1),
                   // Text(snapshot.data!['제보시간'].toString()),
+                  Text('제보시간', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(DateFormat.yMd('ko_KR')
+                      .add_jms()
+                      .format(_time)
+                      .toString()),
                   Text('긴급도', style: TextStyle(fontWeight: FontWeight.bold)),
                   Text(_emer),
-                  Text('설명', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text(snapshot.data!['설명']),
                   Text('유형', style: TextStyle(fontWeight: FontWeight.bold)),
                   Text(snapshot.data!['유형']),
-                  Text('제보시간', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text(DateFormat.yMd('ko_KR').add_jms().format(_time).toString()),
-                  imageUrl==''? Container(child: CircularProgressIndicator()) : Container(child: Image.network(imageUrl)),
+                  Text('설명', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(snapshot.data!['설명']),
+                  ListTile(
+                    title: imageUrl == ''
+                        ? CircularProgressIndicator()
+                        : Image.network(imageUrl),
+                    onTap: () {
+                      showDialog(
+                          context: context,
+                          builder: (BuildContext context){
+                            return AlertDialog(
+                              content: imageUrl == ''
+                                  ? CircularProgressIndicator()
+                                  : Image.network(imageUrl,width: 300,height: 300),
+                            );
+                          },
+                      );
+                    },
+                  ),
+                  // imageUrl == ''
+                  //     ? Container(child: CircularProgressIndicator())
+                  //     : Container(child: Image.network(imageUrl)),
                 ],
               ),
             ),
+            actions: <Widget>[
+              new TextButton(
+                child: new Text('확인'),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
+            ],
           );
         } else {
           return AlertDialog(
             title: Text('제보 화면 보기'),
             content: Container(child: CircularProgressIndicator()),
           );
-
         }
       },
     );
   }
+
   printUrl() async {
-    String url = (await FirebaseStorage.instance.ref().child('images/${widget.markerValue1}').getDownloadURL()).toString();
+    String url = (await FirebaseStorage.instance
+            .ref()
+            .child('images/${widget.markerValue1}')
+            .getDownloadURL())
+        .toString();
     // print(url);
     setState(() {
       imageUrl = url;
